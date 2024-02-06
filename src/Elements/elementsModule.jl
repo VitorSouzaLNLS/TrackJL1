@@ -2,7 +2,7 @@ module Elements
 
 include("Elements.jl")
 
-export marker, corrector, hcorrector, vcorrector, drift, matrix, rbend, dipole, quadrupole, sextupole, rfcavity, kickmap
+export marker, corrector, hcorrector, vcorrector, drift, matrix, rbend, quadrupole, sextupole, rfcavity, kickmap
 
 # Define functions for Element
 function marker(fam_name::String)
@@ -49,11 +49,12 @@ function matrix(fam_name::String, length::Float64)
     return element
 end
 
-function rbend(fam_name::String, angle::Float64, angle_in::Float64, angle_out::Float64,
+function rbend(fam_name::String, length::Float64, angle::Float64, angle_in::Float64, angle_out::Float64,
                 gap::Float64, fint_in::Float64, fint_out::Float64, polynom_a::Vector{Float64},
-                polynom_b::Vector{Float64}, K::Float64, S::Float64, nr_steps::Int)
+                polynom_b::Vector{Float64}, K::Float64=-999.0, S::Float64=-999.0, nr_steps::Int=20)
     element = Element!(fam_name)
     element.properties[:pass_method] = pm_bnd_mpole_symplectic4_pass
+    element.properties[:length] = length
     element.properties[:angle] = angle
     element.properties[:angle_in] = angle_in
     element.properties[:angle_out] = angle_out
@@ -62,19 +63,17 @@ function rbend(fam_name::String, angle::Float64, angle_in::Float64, angle_out::F
     element.properties[:fint_out] = fint_out
     element.properties[:polynom_a] = polynom_a
     element.properties[:polynom_b] = polynom_b
-    element.properties[:polynom_b][2] = K
-    element.properties[:polynom_b][3] = S
+    if (K != -999.0) 
+        element.properties[:polynom_b][2] = K
+    end
+    if (S != -999.0) 
+        element.properties[:polynom_b][3] = S
+    end
     element.properties[:nr_steps] = nr_steps
     return element
 end
 
-function dipole(fam_name::String, angle::Float64, angle_in::Float64, angle_out::Float64,
-                           gap::Float64, fint_in::Float64, fint_out::Float64, polynom_a::Vector{Float64},
-                           polynom_b::Vector{Float64}, K::Float64, S::Float64, nr_steps::Int)
-    return rbend(fam_name, angle, angle_in, angle_out, gap, fint_in, fint_out, polynom_a, polynom_b, K, S, nr_steps)
-end
-
-function quadrupole(fam_name::String, K::Float64, length::Float64, nr_steps::Int)
+function quadrupole(fam_name::String, length::Float64, K::Float64; nr_steps::Int=10)
     element = Element!(fam_name)
     element.properties[:pass_method] = pm_str_mpole_symplectic4_pass
     element.properties[:polynom_a] = [0.0, 0.0, 0.0] # copy(default_polynom)
@@ -85,13 +84,14 @@ function quadrupole(fam_name::String, K::Float64, length::Float64, nr_steps::Int
     return element
 end
 
-function sextupole(fam_name::String, S::Float64, nr_steps::Int)
+function sextupole(fam_name::String, length::Float64, S::Float64; nr_steps::Int=5)
     element = Element!(fam_name)
     element.properties[:pass_method] = pm_str_mpole_symplectic4_pass
     element.properties[:polynom_a] = [0.0, 0.0, 0.0] # copy(default_polynom)
     element.properties[:polynom_b] = [0.0, 0.0, 0.0] # copy(default_polynom) 
     element.properties[:polynom_b][3] = S
     element.properties[:nr_steps] = nr_steps
+    element.properties[:length] = length
     return element
 end
 
