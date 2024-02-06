@@ -1,8 +1,7 @@
-# using ..Elements: rbend, quadrupole
 
-export dipole_bc, dipole_b1, dipole_b2
+using ..Elements: Element, marker, rbend, drift, quadrupole
 
-using ..Elements: Element, marker, rbend, drift
+export dipole_bc, dipole_b1, dipole_b2, quadrupole_q14, quadrupole_q20, quadrupole_q30
 
 function dipole_bc(m_accep_fam_name::String; simplified::Bool=false)
     """Segmented BC dipole model."""
@@ -167,7 +166,7 @@ function dipole_b1(m_accep_fam_name::String; simplified::Bool=false)
 
     # turns deflection angle error off (convenient for having a nominal model
     # with zero 4d closed orbit)
-    for i in range(1, len(segmodel))
+    for i in range(1, length(segmodel))
         segmodel[i][4] = 0.0
     end
 
@@ -198,7 +197,7 @@ function dipole_b1(m_accep_fam_name::String; simplified::Bool=false)
 
     # --- add source point marker to half-model ---
     imodel = model[end:-1:1]
-    angles = Float64[elem.angle for elem in imodel]
+    angles = Float64[haskey(elem.properties, :angle) ? elem.properties[:angle] : 0.0 for elem in imodel]
     angles_cumsum = cumsum(angles)
     src_idx = argmin(abs.(angles_cumsum .- src_point_angle))
     fam_name, element_type = segtypes["B1_SRC"]
@@ -279,7 +278,7 @@ function dipole_b2(m_accep_fam_name::String; simplified::Bool=false)
 
     # turns deflection angle error off (convenient for having a nominal model
     # with zero 4d closed orbit)
-    for i in range(1, len(segmodel))
+    for i in range(1, length(segmodel))
         segmodel[i][4] = 0.0
     end
 
@@ -332,3 +331,145 @@ function dipole_b2(m_accep_fam_name::String; simplified::Bool=false)
 
 end
 
+function quadrupole_q14(fam_name::String, strength::Float64; simplified::Bool=false)
+    """Segmented Q14 quadrupole model."""
+    segtypes = Dict(
+        fam_name => (fam_name, "quadrupole"),
+    )
+
+    # Q14 model
+    # =========
+    # this (half) model is based on fieldmap
+    # '2017-02-24_Q14_Model04_Sim_X=-14_14mm_Z=-500_500mm_Imc=146.6A_Itc=10A.txt'
+
+    monomials = [1, 5, 9, 13]
+    segmodel = [
+        # type  len[m]  angle[deg]  PolyB(n=1)   PolyB(n=5)   PolyB(n=9)   PolyB(n=13)
+        [fam_name, 0.0700, +0.00000, -4.06e+00, +6.38e+04, -1.45e+13, +2.90e+20]
+    ]
+
+    # rescale fieldmap data to strength argument
+    quadidx = indexin([1], monomials)[1]
+    seg_lens = Float64[segmodel[i][1+1] for i in range(1, length(segmodel))]
+    model_length = 2 * sum(seg_lens)
+    fmap_strength = Float64[2*segmodel[i][4+quadidx]*seg_lens[i]/model_length for i in
+                     range(1, length(segmodel))]
+    rescale = Float64[strength / fmap_strength[i] for i in range(1, length(segmodel))]
+
+    # --- hard-edge 1-segment model ---
+    model = []
+    i = 1
+    fam_name, element_type = segtypes[segmodel[i][1+0]]
+    PolyB = zeros(Float64, 1+maximum(Int, monomials))
+    for j in range(1, length(monomials))
+        PolyB[monomials[j]+1] = segmodel[i][j+3] * rescale[i]
+    end
+    PolyA = PolyB * 0.0 
+    element = quadrupole(fam_name, 2*segmodel[i][1+1], PolyB[2])
+    element.properties[:polynom_a] = PolyA
+    element.properties[:polynom_b] = PolyB
+    push!(model, element)
+
+    if simplified
+        model[1].properties[:polynom_a] = model[1].properties[:polynom_a][1:3]
+        model[1].properties[:polynom_b] = model[1].properties[:polynom_b][1:3]
+    end
+
+    return model
+end
+
+function quadrupole_q20(fam_name::String, strength::Float64; simplified::Bool=false)
+    """Segmented Q20 quadrupole model."""
+    segtypes = Dict(
+        fam_name => (fam_name, "quadrupole"),
+    )
+
+     # Q20 model
+    # =========
+    # this (half) model is based on fieldmap
+    # '2017-02-24_Q20_Model05_Sim_X=-14_14mm_Z=-500_500mm_Imc=
+    #  154.66A_Itc=10A.txt'
+
+    monomials = [1, 5, 9, 13]
+    segmodel = [
+        # type  len[m]   angle[deg]  PolyB(n=1)   PolyB(n=5)   PolyB(n=9)   PolyB(n=13)
+        [fam_name, 0.1000, +0.00000, -4.74e+00, +8.41e+04, -1.83e+13, +3.47e+20],
+    ]
+
+    # rescale fieldmap data to strength argument
+    quadidx = indexin([1], monomials)[1]
+    seg_lens = Float64[segmodel[i][1+1] for i in range(1, length(segmodel))]
+    model_length = 2 * sum(seg_lens)
+    fmap_strength = Float64[2*segmodel[i][4+quadidx]*seg_lens[i]/model_length for i in
+                     range(1, length(segmodel))]
+    rescale = Float64[strength / fmap_strength[i] for i in range(1, length(segmodel))]
+
+    # --- hard-edge 1-segment model ---
+    model = []
+    i = 1
+    fam_name, element_type = segtypes[segmodel[i][1+0]]
+    PolyB = zeros(Float64, 1+maximum(Int, monomials))
+    for j in range(1, length(monomials))
+        PolyB[monomials[j]+1] = segmodel[i][j+3] * rescale[i]
+    end
+    PolyA = PolyB * 0.0 
+    element = quadrupole(fam_name, 2*segmodel[i][1+1], PolyB[2])
+    element.properties[:polynom_a] = PolyA
+    element.properties[:polynom_b] = PolyB
+    push!(model, element)
+
+    if simplified
+        model[1].properties[:polynom_a] = model[1].properties[:polynom_a][1:3]
+        model[1].properties[:polynom_b] = model[1].properties[:polynom_b][1:3]
+    end
+
+    return model
+end
+
+function quadrupole_q30(fam_name::String, strength::Float64; simplified::Bool=false)
+    """Segmented Q30 quadrupole model."""
+    segtypes = Dict(
+        fam_name => (fam_name, "quadrupole"),
+    )
+
+    # Q30 model
+    # =========
+    # this (half) model is based on fieldmap
+    # '2017-02-24_Q30_Model06_Sim_X=-14_14mm_Z=-500_500mm_Imc=
+    #  153.8A_Itc=10A.txt'
+
+    monomials = [1, 5, 9, 13]
+    segmodel = [
+        # type  len[m]   angle[deg]  PolyB(n=1)   PolyB(n=5)   PolyB(n=9)   PolyB(n=13)
+        [fam_name, 0.1500, +0.00000, -4.75e+00, +1.06e+05, -1.95e+13, +3.56e+20],
+    ]
+
+    # rescale fieldmap data to strength argument
+    quadidx = indexin([1], monomials)[1]
+    seg_lens = Float64[segmodel[i][1+1] for i in range(1, length(segmodel))]
+    model_length = 2 * sum(seg_lens)
+    fmap_strength = Float64[2*segmodel[i][4+quadidx]*seg_lens[i]/model_length for i in
+                     range(1, length(segmodel))]
+    rescale = Float64[strength / fmap_strength[i] for i in range(1, length(segmodel))]
+
+    # --- hard-edge 1-segment model ---
+    model = []
+    i = 1
+    fam_name, element_type = segtypes[segmodel[i][1+0]]
+    PolyB = zeros(Float64, 1+maximum(Int, monomials))
+    for j in range(1, length(monomials))
+        PolyB[monomials[j]+1] = segmodel[i][j+3] * rescale[i]
+    end
+    PolyA = PolyB * 0.0 
+    element = quadrupole(fam_name, 2*segmodel[i][1+1], PolyB[2])
+    element.properties[:polynom_a] = PolyA
+    element.properties[:polynom_b] = PolyB
+    push!(model, element)
+
+    if simplified
+        model[1].properties[:polynom_a] = model[1].properties[:polynom_a][1:3]
+        model[1].properties[:polynom_b] = model[1].properties[:polynom_b][1:3]
+    end
+
+    return model
+end

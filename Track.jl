@@ -4,10 +4,9 @@ module Trackjl
 
 export Constants
 export Auxiliary
-export Element, Element!, print_element
-export Elements
+export Elements, Element!, print_element
 export Pos
-export AcceleratorModule, Accelerator, Accelerator!
+export AcceleratorModule, Accelerator!, find_indices, find_spos, print_accelerator
 export Tracking
 export read_flatfile!, write_flatfile!
 export Sirius
@@ -24,11 +23,10 @@ include("src/Models/SI/Sirius.jl")
 using .Constants
 using .Auxiliary
 using .Elements
+using .PosModule
 using .AcceleratorModule
-using .PosModule:Pos
-using .AcceleratorModule: Accelerator, Accelerator!
 using .Tracking
-using .FlatFile: read_flatfile!, write_flatfile!
+using .FlatFile
 using .Sirius
 
 end

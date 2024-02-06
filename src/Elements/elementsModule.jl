@@ -2,7 +2,7 @@ module Elements
 
 include("Elements.jl")
 
-export marker, corrector, hcorrector, vcorrector, drift, matrix, rbend, quadrupole, sextupole, rfcavity, kickmap
+export marker, corrector, hcorrector, vcorrector, drift, matrix, rbend, quadrupole, sextupole, rfcavity, kickmap, lattice_flatten!, print_element
 
 # Define functions for Element
 function marker(fam_name::String)
@@ -114,5 +114,41 @@ function kickmap(fam_name::String, kicktable_idx::Int, nr_steps::Int, rescale_ki
     return element
 end
 
-
+function flatten_to_element_vector(arg::Any)
+    if isa(arg, Vector{Element})
+        return arg
+    elseif isa(arg, Element)
+        return [arg]
+    elseif isa(arg, Vector)
+        # Recursively flatten each element in the vector
+        flattened = []
+        for elem in arg
+            append!(flattened, flatten_to_element_vector(elem))
+        end
+        return flattened
+    else
+        throw(ArgumentError("Unsupported argument type: $(typeof(arg))"))
+    end
 end
+
+function lattice_flatten!(arg::Any)
+    latt = Vector{Element}(flatten_to_element_vector(arg))
+    return latt
+end
+
+# Other functions
+function print_element(out::IO, element::Element)
+    custom_order = [:pass_method, :nr_steps, :angle, :angle_in, :angle_out, :gap, :fint_in, :fint_out, :polynom_a, :polynom_b, :frequency, :voltage, :phase_lag, :kicktable_idx, :rescale_kicks, :hkick, :vkick]
+    
+    keys_sorted = [key in keys(element.properties) ? key : nothing for key in custom_order]
+    keys_sorted = filter(x -> x !== nothing, keys_sorted)
+
+    name = element.fam_name
+    println(out, "$name")
+    for key in keys_sorted
+        value = element.properties[key]
+        println(out, "$key : $value")
+    end
+end
+
+end #

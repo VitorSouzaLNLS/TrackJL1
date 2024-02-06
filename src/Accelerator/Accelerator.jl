@@ -1,12 +1,11 @@
 # Accelerator.jl
 
-using Printf
 import Base: !=, setproperty!, setfield!, getproperty
 using ..Auxiliary
 using ..Constants
 using ..Elements: Element
 
-export Accelerator, Accelerator!, find_spos, print_accelerator
+export Accelerator, Accelerator!, find_spos, find_indices
 
 electron_rest_energy_eV = Constants.electron_rest_energy_eV
 
@@ -112,7 +111,7 @@ function setproperty!(accelerator::Accelerator, symbol::Symbol, value)
 
     elseif symbol == :lattice_version
         # Custom logic for setting the lattice_version field
-        setfield!(accelerator, :lattice_version, value)
+        # setfield!(accelerator, :lattice_version, value)
         @warn("Changing the \"lattice_version\" manually is not recommended..")
     
     elseif symbol == :length # Do nothing -> automatic calculation
@@ -143,41 +142,69 @@ function setproperty!(accelerator::Accelerator, symbol::Symbol, value)
     end
 end
 
-function print_accelerator(out::IO, accelerator::Accelerator)
-    println(out, "\n--------------- Accelerator ---------------")
-    println(out, "energy: $(accelerator.energy) [eV]")
-    println(out, "cavity: $(accelerator.cavity_state)")
-    println(out, "radiation state: $(accelerator.radiation_state)")
-    println(out, "vchamber: $(accelerator.vchamber_on)")
-    println(out, "harmonic number: $(accelerator.harmonic_number)")    
-    println(out, "length: $(accelerator.length)")
-    @printf(out, "velocity: %.8f [m/s]\n", accelerator.velocity)
-    @printf(out, "beta factor: %.16f \n", accelerator.beta_factor)
-    @printf(out, "gamma factor: %.1f \n", accelerator.gamma_factor)
-    if (accelerator.lattice_version != "")
-        println(out, "lattice version: $(accelerator.lattice_version)")
+function _all_spos(accelerator::Accelerator)
+    spos = Float64[]
+    temp_spos = 0.0
+    latt = accelerator.lattice
+    for elem in latt
+        push!(spos, temp_spos)
+        temp_spos += elem.properties[:length]
     end
-    println(out, "-------------------------------------------\n")
+    push!(spos, temp_spos)
+    return spos
 end
 
 function find_spos(accelerator::Accelerator, indices::Vector{Int})
     spos = Float64[]
+    all_spos = _all_spos(accelerator)
     for index in indices
-        if 1 <= index <= length(accelerator.lattice)+1
-            spos_elem = sum(element.properties[:length] for element in accelerator.lattice[1:index-1])
-            push!(spos, spos_elem)
-        else
-            error("Invalid index $index for the lattice")
-        end
+        push!(spos, all_spos[index])
     end
     return spos
 end
 
 function find_spos(accelerator::Accelerator, index::Int)
     if 1 <= index <= length(accelerator.lattice)+1
-        return sum(element.properties[:length] for element in accelerator.lattice[1:index-1])
+        return find_spos(accelerator, [index])
     else
         throw(ArgumentError("Invalid index $index for the lattice"))
     end
 end
 
+function find_spos(accelerator::Accelerator; indices::T="open") where T<:Union{String, Vector{Int}}
+    idx = Vector{Int}(range(1, length(accelerator.lattice)))
+    if indices == "open"
+        return find_spos(accelerator, idx)
+    elseif indices == "closed"
+        push!(idx, Int(length(accelerator.lattice)+1))
+        return find_spos(accelerator, idx)
+    else
+        return find_spos(accelerator, indices)
+    end
+end
+
+function find_indices(accelerator::Accelerator, property::String, value::Any)
+    indices = Int[]
+    for (idx, element) in enumerate(accelerator.lattice)
+        if property == "fam_name" && element.fam_name == value
+            push!(indices, idx)
+        elseif haskey(element.properties, Symbol(property)) && element.properties[Symbol(property)] == value
+            push!(indices, idx)
+        end
+    end
+    return indices
+end
+
+function lattice_shift!(accelerator::Accelerator, index::Int)
+    lattice::Vector{Element} = accelerator.lattice
+    
+    # Check if the index is within bounds
+    if index < 1 || index > length(lattice)
+        throw(ArgumentError("Index out of bounds"))
+    end
+    
+    # Shift the lattice
+    new_lattice = vcat(lattice[index:end], lattice[1:index-1])
+
+    accelerator.lattice = new_lattice
+end
