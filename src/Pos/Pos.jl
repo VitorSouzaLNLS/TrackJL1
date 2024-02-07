@@ -47,6 +47,10 @@ function  Base.:/(v::Pos{T}, scalar::S) where {T, S<:Real}
     return (1 / scalar) * v
 end
 
+function Base.copy(p::Pos{T}) where T
+    return Pos(p.rx, p.px, p.ry, p.py, p.de, p.dl)
+end
+
 # Revisar se eh necessario a redefinicao de "abs"
 # function Base.:abs(x::T) where T
 #     return ifelse(x > 0.0, x, -x)

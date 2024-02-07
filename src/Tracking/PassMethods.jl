@@ -25,24 +25,25 @@ const CER::Float64 = 2.81794092e-15       # Classical electron radius [m]
 const CU::Float64 = 1.323094366892892     # 55/(24*sqrt(3)) factor
 
 function aux_drift(pos::Pos{T}, length::T) where T
-    pnorm = 1 / (1 + pos.de)
-    norml = length * pnorm
+    pnorm::Float64 = 1 / (1 + pos.de)
+    norml::Float64 = length * pnorm
     pos.rx += norml * pos.px
     pos.ry += norml * pos.py
-    pos.dl += 0.5 * norml * pnorm * (pos.px^2 + pos.py^2)
+    pos.dl += 0.5 * norml * pnorm * (pos.px*pos.px + pos.py*pos.py)
 end
 
-function aux_drift_fast(pos::Pos{T}, norml::T) where T
-    pos.rx += norml * pos.px
-    pos.ry += norml * pos.py
-    pos.dl += 0.5 * norml * (pos.px^2 + pos.py^2) / (1 + pos.de)
-end
+# function aux_drift_fast(pos::Pos{T}, norml::T) where T
+#     pos.rx += norml * pos.px
+#     pos.ry += norml * pos.py
+#     pos.dl += 0.5 * norml * (pos.px^2 + pos.py^2) / (1 + pos.de)
+# end
 
 function aux_calcpolykick(pos::Pos{T}, polynom_a::Vector{Float64},
     polynom_b::Vector{Float64}) where T
     n = min(length(polynom_b), length(polynom_a))
     if n == 0
-        real_sum = imag_sum = zero(T)
+        real_sum = 0.0
+        imag_sum = 0.0
     else
         real_sum = polynom_b[n]
         imag_sum = polynom_a[n]
@@ -70,21 +71,21 @@ function aux_strthinkick(pos::Pos{T}, length::Float64, polynom_a::Vector{Float64
 
     real_sum, imag_sum = aux_calcpolykick(pos, polynom_a, polynom_b)
 
-    if rad_const != 0
+    if rad_const != 0.0
         pnorm = 1 / (1 + pos.de)
         rx, px, ry, py = pos.rx, pos.px * pnorm, pos.ry, pos.py * pnorm
         b2p = aux_b2_perp(imag_sum, real_sum, px, py)
         delta_factor = (1 + pos.de)^2
-        dl_ds = (1 + px^2 + py^2) / 2
+        dl_ds = 1.0 + (px^2 + py^2) / 2
         pos.de -= rad_const * delta_factor * b2p * dl_ds * length
 
-        if qexcit_const != 0
+        if qexcit_const != 0.0
             # quantum excitation kick
             d = delta_factor * qexcit_const * sqrt(b2p^1.5 * dl_ds)
             pos.de += d * randn()
         end
 
-        pnorm = 1 / (1 + pos.de)  # actually, this is the inverse of pnorm
+        pnorm = 1 + pos.de  # actually, this is the inverse of pnorm
         pos.px = px * pnorm
         pos.py = py * pnorm
     end
@@ -105,7 +106,7 @@ function aux_bndthinkick(pos::Pos{T}, length::Float64, polynom_a::Vector{Float64
         curv = 1 + irho * rx
         b2p = aux_b2_perp(imag_sum, real_sum + irho, px, py, curv)
         delta_factor = (1 + pos.de)^2
-        dl_ds = (curv + (px^2 + py^2) / 2)
+        dl_ds = curv + (px^2 + py^2) / 2
         pos.de -= rad_const * delta_factor * b2p * dl_ds * length
 
         if qexcit_const != 0
@@ -114,11 +115,11 @@ function aux_bndthinkick(pos::Pos{T}, length::Float64, polynom_a::Vector{Float64
             pos.de += d * randn()
         end
 
-        pnorm = 1 / (1 + pos.de)  # actually this is the inverse of pnorm
+        pnorm = 1 + pos.de  # actually this is the inverse of pnorm
         pos.px = px * pnorm
         pos.py = py * pnorm
     end
-
+    
     pos.px -= length * (real_sum - (de - pos.rx * irho) * irho)
     pos.py += length * imag_sum
     pos.dl += length * irho * pos.rx
@@ -138,27 +139,27 @@ function aux_edge_fringe(pos::Pos{T}, inv_rho::Float64, edge_angle::Float64,
     pos.py -= ry * fy
 end
 
-function aux_translate_pos(pos::Pos{T}, t::Vector{Float64}) where T
-    pos.rx += t[1]
-    pos.px += t[2]
-    pos.ry += t[3]
-    pos.py += t[4]
-    pos.de += t[5]
-    pos.dl += t[6]
-end
+# function aux_translate_pos(pos::Pos{T}, t::Vector{Float64}) where T
+#     pos.rx += t[1]
+#     pos.px += t[2]
+#     pos.ry += t[3]
+#     pos.py += t[4]
+#     pos.de += t[5]
+#     pos.dl += t[6]
+# end
 
-function aux_rotate_pos(pos::Pos{T}, R::Vector{Float64}) where T
-    rx0, px0 = pos.rx, pos.px
-    ry0, py0 = pos.ry, pos.py
-    de0, dl0 = pos.de, pos.dl
+# function aux_rotate_pos(pos::Pos{T}, R::Vector{Float64}) where T
+#     rx0, px0 = pos.rx, pos.px
+#     ry0, py0 = pos.ry, pos.py
+#     de0, dl0 = pos.de, pos.dl
 
-    pos.rx = R[0*6 + 1]*rx0 + R[0*6 + 2]*px0 + R[0*6 + 3]*ry0 + R[0*6 + 4]*py0 + R[0*6 + 5]*de0 + R[0*6 + 6]*dl0
-    pos.px = R[1*6 + 1]*rx0 + R[1*6 + 2]*px0 + R[1*6 + 3]*ry0 + R[1*6 + 4]*py0 + R[1*6 + 5]*de0 + R[1*6 + 6]*dl0
-    pos.ry = R[2*6 + 1]*rx0 + R[2*6 + 2]*px0 + R[2*6 + 3]*ry0 + R[2*6 + 4]*py0 + R[2*6 + 5]*de0 + R[2*6 + 6]*dl0
-    pos.py = R[3*6 + 1]*rx0 + R[3*6 + 2]*px0 + R[3*6 + 3]*ry0 + R[3*6 + 4]*py0 + R[3*6 + 5]*de0 + R[3*6 + 6]*dl0
-    pos.de = R[4*6 + 1]*rx0 + R[4*6 + 2]*px0 + R[4*6 + 3]*ry0 + R[4*6 + 4]*py0 + R[4*6 + 5]*de0 + R[4*6 + 6]*dl0
-    pos.dl = R[5*6 + 1]*rx0 + R[5*6 + 2]*px0 + R[5*6 + 3]*ry0 + R[5*6 + 4]*py0 + R[5*6 + 5]*de0 + R[5*6 + 6]*dl0
-end
+#     pos.rx = R[0*6 + 1]*rx0 + R[0*6 + 2]*px0 + R[0*6 + 3]*ry0 + R[0*6 + 4]*py0 + R[0*6 + 5]*de0 + R[0*6 + 6]*dl0
+#     pos.px = R[1*6 + 1]*rx0 + R[1*6 + 2]*px0 + R[1*6 + 3]*ry0 + R[1*6 + 4]*py0 + R[1*6 + 5]*de0 + R[1*6 + 6]*dl0
+#     pos.ry = R[2*6 + 1]*rx0 + R[2*6 + 2]*px0 + R[2*6 + 3]*ry0 + R[2*6 + 4]*py0 + R[2*6 + 5]*de0 + R[2*6 + 6]*dl0
+#     pos.py = R[3*6 + 1]*rx0 + R[3*6 + 2]*px0 + R[3*6 + 3]*ry0 + R[3*6 + 4]*py0 + R[3*6 + 5]*de0 + R[3*6 + 6]*dl0
+#     pos.de = R[4*6 + 1]*rx0 + R[4*6 + 2]*px0 + R[4*6 + 3]*ry0 + R[4*6 + 4]*py0 + R[4*6 + 5]*de0 + R[4*6 + 6]*dl0
+#     pos.dl = R[5*6 + 1]*rx0 + R[5*6 + 2]*px0 + R[5*6 + 3]*ry0 + R[5*6 + 4]*py0 + R[5*6 + 5]*de0 + R[5*6 + 6]*dl0
+# end
 
 function pm_identity_pass!(pos::Pos{T}, element::Element) where T
     return st_success
@@ -304,7 +305,8 @@ function pm_cavity_pass!(pos::Pos{T}, elem::Element, accelerator::Accelerator, t
 
     if elem.properties[:length] == 0
         de, dl = pos.de, pos.dl
-        pos.de += -nv * sin(TWOPI * frf * (dl/velocity - (harmonic_number/frf - T0)*turn_number) - philag)
+        #pos.de += -nv * sin(TWOPI * frf * (dl/velocity - (harmonic_number/frf - T0)*turn_number) - philag)
+        pos.de += -nv * sin(TWOPI * frf * dl / velocity - philag)
     else
         rx, px = pos.rx, pos.px
         ry, py = pos.ry, pos.py
@@ -318,7 +320,8 @@ function pm_cavity_pass!(pos::Pos{T}, elem::Element, accelerator::Accelerator, t
         pos.dl += 0.5 * norml * pnorm * (px*px + py*py)
 
         # Longitudinal momentum kick
-        pos.de += -nv * sin(TWOPI * frf * (dl/velocity - (harmonic_number/frf - T0)*turn_number) - philag)
+        #pos.de += -nv * sin(TWOPI * frf * (dl/velocity - (harmonic_number/frf - T0)*turn_number) - philag)
+        pos.de += -nv * sin(TWOPI * frf * dl / velocity - philag)
 
         # Drift half length
         pnorm = 1.0 / (1.0 + de)

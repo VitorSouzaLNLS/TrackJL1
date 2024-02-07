@@ -5,7 +5,8 @@ export track_linepass!, track_elementpass!
 using ..AcceleratorModule: Accelerator
 using ..Elements: Element
 using ..PosModule: Pos
-using ..Auxiliary: vchamber_rectangle, vchamber_rhombus, vchamber_ellipse
+using ..Auxiliary: vchamber_rectangle, vchamber_rhombus, vchamber_ellipse, st_success, no_plane, plane_x, plane_y, plane_xy
+
 
 function track_elementpass!(
     element::Element,            # element through which to track particle
@@ -52,10 +53,10 @@ function track_elementpass!(
     for pos in v_pos
         st = track_elementpass!(element, pos, accelerator, turn_number)
         if st != st_success
-            st_success = st
+            status = st
         end
     end
-    return st
+    return status
 end
 
 function track_linepass!(
@@ -78,6 +79,7 @@ function track_linepass!(
     # Create vector of booleans to determine when to store position
     indcs = falses(nr_elements + 1)
     indcs[indices] .= true
+    println(stdout, indcs)
 
     pos = orig_pos
 
@@ -87,20 +89,26 @@ function track_linepass!(
 
         # Stores trajectory at entrance of each element
         if indcs[i]
-            push!(tracked_pos, pos)
+            push!(tracked_pos, copy(pos))
         end
 
-        status = track_elementpass!(element, pos, accelerator, turn_number)
+        pos, status = track_elementpass!(element, pos, accelerator, turn_number)
 
         rx, ry = pos.rx, pos.ry
 
+        pm = element.properties[:pass_method]
+        fname = element.fam_name
+        println(stdout, "loop iter: $i status = $status, elem = $fname, pm = $pm, pos = $pos")
+
         # Checks if particle is lost
         if !isfinite(rx)
+            println(stdout, "entered here 1")
             lost_plane = plane_x
-            status =particle_lost
+            status = particle_lost
         end
 
         if !isfinite(ry)
+            println(stdout, "entered here 2")
             if status != particle_lost
                 lost_plane = plane_y
                 status = particle_lost
@@ -109,18 +117,8 @@ function track_linepass!(
             end
         end
 
-        if status != st_success
-            # Fill the rest of vector with NaNs
-            for j in i+1:nr_elements
-                if indcs[j]
-                    push!(tracked_pos, Pos(NaN, NaN, NaN, NaN, NaN, NaN))
-                end
-            end
-            return status
-        end
-
         if (status != particle_lost) && (accelerator.vchamber_on == on)
-
+            println(stdout, "entered here 4")
             if element.properties[:vchamber] == vchamber_rectangle
                 if haskey(element.properties, :hmin) && haskey(element.properties, :hmax) haskey(element.properties, :vmin) && haskey(element.properties, :vmax)
                     if rx <= element.properties[:hmin] || rx >= element.properties[:hmax]
@@ -145,6 +143,17 @@ function track_linepass!(
             else
                 status, lost_plane = aux_check_lost_pos(element, rx, ry)
             end
+        end
+
+        if status != st_success
+            println(stdout, "entered here 3")
+            # Fill the rest of vector with NaNs
+            for j in i+1:nr_elements
+                if indcs[j]
+                    push!(tracked_pos, Pos(NaN, NaN, NaN, NaN, NaN, NaN))
+                end
+            end
+            return tracked_pos, status
         end
 
         # Moves to the next element index
