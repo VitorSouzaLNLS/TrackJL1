@@ -2,7 +2,7 @@ module Elements
 
 include("Elements.jl")
 
-export marker, corrector, hcorrector, vcorrector, drift, matrix, rbend, quadrupole, sextupole, rfcavity, kickmap, lattice_flatten!, print_element
+export corrector, marker, hcorrector, vcorrector, drift, matrix, rbend, quadrupole, sextupole, rfcavity, kickmap, lattice_flatten!, print_element
 
 # Define functions for Element
 function marker(fam_name::String)

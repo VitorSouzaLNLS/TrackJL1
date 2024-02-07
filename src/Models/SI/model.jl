@@ -621,6 +621,7 @@ function create_lattice(optics_mode::String, simplified, ids)
     # -- create the Accelerator
     the_ring = Accelerator!(energy)
     the_ring.lattice = anel
+    the_ring.harmonic_number = harmonic_number
     setfield!(the_ring, :lattice_version, "SI_V25_04_v1.18.0_julia")
 
     # -- shifts model to marker "start"

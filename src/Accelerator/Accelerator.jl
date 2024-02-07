@@ -92,7 +92,9 @@ function setproperty!(accelerator::Accelerator, symbol::Symbol, value)
     
     elseif symbol == :radiation_state
         # Custom logic for setting the radiation_on field
-        setfield!(accelerator, :radiation_state, value)
+        if isa(value, Auxiliary.RadiationState) || isa(value, Int) || isa(value, Bool)
+            setfield!(accelerator, :radiation_state, Auxiliary.RadiationState(Int(value)))
+        end
     
     elseif symbol == :vchamber_on
         # Custom logic for setting the vchamber_on field

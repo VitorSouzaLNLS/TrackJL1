@@ -4,7 +4,7 @@ using Base
 
 export Pos, get_max
 
-mutable struct Pos{T<:Real}
+mutable struct Pos{T<:Float64}
     rx::T
     px::T
     ry::T
@@ -12,6 +12,8 @@ mutable struct Pos{T<:Real}
     de::T
     dl::T
 end
+
+Pos(rx::T, px::T, ry::T, py::T, de::T, dl::T) where T = Pos(Float64(rx), Float64(px), Float64(ry), Float64(py), Float64(de), Float64(dl))
 
 function Base.:+(v1::Pos{T}, v2::Pos{T}) where T
     return Pos{T}(v1.rx + v2.rx, v1.px + v2.px, v1.ry + v2.ry, v1.py + v2.py, v1.de + v2.de, v1.dl + v2.dl)

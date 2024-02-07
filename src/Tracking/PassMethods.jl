@@ -10,6 +10,7 @@ using ..Auxiliary: no_plane, off, on, particle_lost, plane_x, plane_xy, plane_y,
     radiation_off, st_success
 using ..Elements: Element
 using ..PosModule: Pos
+using ..Constants: light_speed
 
 const DRIFT1::Float64  =  0.6756035959798286638e00
 const DRIFT2::Float64  = -0.1756035959798286639e00
@@ -170,7 +171,9 @@ end
 
 function pm_str_mpole_symplectic4_pass!(pos::Pos{T}, elem::Element, accelerator::Accelerator) where T
     # global_2_local(pos, elem)
-    steps = haskey(elem.properties, :nr_steps) ? elem.properties[:nr_steps] : 20
+    # steps = haskey(elem.properties, :nr_steps) ? elem.properties[:nr_steps] : 20
+    steps = elem.properties[:nr_steps]
+
 
     sl = elem.properties[:length] / Float64(steps)
     l1 = sl * DRIFT1
@@ -205,10 +208,12 @@ function pm_str_mpole_symplectic4_pass!(pos::Pos{T}, elem::Element, accelerator:
 end
 
 function pm_bnd_mpole_symplectic4_pass!(pos::Pos{T}, elem::Element, accelerator::Accelerator) where T
-    if !haskey(elem.properties, :angle)
-        return pm_str_mpole_symplectic4_pass!(pos, elem, accelerator)
-    end
-    steps = haskey(elem.properties, :nr_steps) ? elem.properties[:nr_steps] : 20
+    # if !haskey(elem.properties, :angle)
+    #     return pm_str_mpole_symplectic4_pass!(pos, elem, accelerator)
+    # end
+    #steps = haskey(elem.properties, :nr_steps) ? elem.properties[:nr_steps] : 20
+    steps = elem.properties[:nr_steps]
+
 
     sl = elem.properties[:length] / Float64(steps)
     l1 = sl * DRIFT1
@@ -293,6 +298,7 @@ function pm_cavity_pass!(pos::Pos{T}, elem::Element, accelerator::Accelerator, t
     frf = elem.properties[:frequency]
     harmonic_number = accelerator.harmonic_number
     velocity = light_speed
+    #velocity = accelerator.velocity
     L0 = accelerator.length
     T0 = L0 / velocity
 

@@ -39,7 +39,7 @@ function track_elementpass!(
         return passmethod_not_defined
     end
 
-    return status
+    return orig_pos, status
 end
 
 function track_elementpass!(
