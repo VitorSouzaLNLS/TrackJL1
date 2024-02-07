@@ -826,7 +826,7 @@ function set_rf_frequency!(accelerator::Accelerator)
     velocity = light_speed # have to change other things
     rev_freq = velocity / circumference
     freq::Float64 = accelerator.harmonic_number * rev_freq
-    phase_lag::Float64 = 500e6
+    phase_lag::Float64 = 0.0 #500e6
     idx = find_indices(accelerator, "fam_name", "SRFCav")
     for i in idx
         e = accelerator.lattice[i]

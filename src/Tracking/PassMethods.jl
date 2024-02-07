@@ -76,7 +76,7 @@ function aux_strthinkick(pos::Pos{T}, length::Float64, polynom_a::Vector{Float64
         rx, px, ry, py = pos.rx, pos.px * pnorm, pos.ry, pos.py * pnorm
         b2p = aux_b2_perp(imag_sum, real_sum, px, py)
         delta_factor = (1 + pos.de)^2
-        dl_ds = 1.0 + (px^2 + py^2) / 2
+        dl_ds = 1.0 + ((px*px + py*py) / 2)
         pos.de -= rad_const * delta_factor * b2p * dl_ds * length
 
         if qexcit_const != 0.0
@@ -85,7 +85,7 @@ function aux_strthinkick(pos::Pos{T}, length::Float64, polynom_a::Vector{Float64
             pos.de += d * randn()
         end
 
-        pnorm = 1 + pos.de  # actually, this is the inverse of pnorm
+        pnorm = 1.0 + pos.de  # actually, this is the inverse of pnorm
         pos.px = px * pnorm
         pos.py = py * pnorm
     end
@@ -98,24 +98,24 @@ function aux_bndthinkick(pos::Pos{T}, length::Float64, polynom_a::Vector{Float64
     polynom_b::Vector{Float64}, irho::Float64, rad_const::Float64=0.0, qexcit_const::Float64=0.0) where T
     
     real_sum, imag_sum = aux_calcpolykick(pos, polynom_a, polynom_b)
-    de = pos.de
+    de = copy(pos.de)
 
     if rad_const != 0
         pnorm = 1 / (1 + pos.de)
         rx, px, ry, py = pos.rx, pos.px * pnorm, pos.ry, pos.py * pnorm
-        curv = 1 + irho * rx
+        curv = 1.0 + (irho * rx)
         b2p = aux_b2_perp(imag_sum, real_sum + irho, px, py, curv)
         delta_factor = (1 + pos.de)^2
-        dl_ds = curv + (px^2 + py^2) / 2
+        dl_ds = curv + ((px*px + py*py) / 2)
         pos.de -= rad_const * delta_factor * b2p * dl_ds * length
 
         if qexcit_const != 0
             # quantum excitation kick
-            d = delta_factor * qexcit_const * sqrt(b2p^3 * dl_ds)
+            d = delta_factor * qexcit_const * sqrt(b2p^1.5 * dl_ds)
             pos.de += d * randn()
         end
 
-        pnorm = 1 + pos.de  # actually this is the inverse of pnorm
+        pnorm = 1.0 + pos.de  # actually this is the inverse of pnorm
         pos.px = px * pnorm
         pos.py = py * pnorm
     end
@@ -127,13 +127,17 @@ end
 
 function aux_edge_fringe(pos::Pos{T}, inv_rho::Float64, edge_angle::Float64,
     fint::Float64, gap::Float64) where T
-    rx, px, ry, py, de = pos.rx, pos.px, pos.ry, pos.py, pos.de
+    rx::Float64 = pos.rx
+    ry::Float64 = pos.px
+    de::Float64 = pos.de
 
-    fx = inv_rho * tan(edge_angle) / (1 + de)
+    fx = inv_rho * tan(edge_angle) / (1.0 + de)
 
-    psi_bar = edge_angle - inv_rho * gap * fint * (1 + sin(edge_angle)^2) / cos(edge_angle) / (1 + de)
+    psi_bar = edge_angle - inv_rho * gap * fint * (1 + sin(edge_angle)^2) / cos(edge_angle) / (1.0 + de)
     
-    fy = inv_rho * tan(psi_bar) / (1 + de)
+    fy = inv_rho * tan(psi_bar) / (1.0 + de)
+
+    println(stdout, " psi_bar , fx , fy  =  $psi_bar  ,  $fx  ,  $fy")
 
     pos.px += rx * fx
     pos.py -= ry * fy

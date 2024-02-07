@@ -59,8 +59,8 @@ function dipole_bc(m_accep_fam_name::String; simplified::Bool=false)
 
     # --- creates half model ---
     d2r = pi/180.0
-    PolyB = zeros(Float64, 1+maximum(Int, monomials))
     for i in range(1, length(segmodel))
+        PolyB = zeros(Float64, 1+maximum(Int, monomials))
         fam_name, element_type = segtypes[segmodel[i][1+0]]
         angle = segmodel[i][1+2]
         if element_type == "rbend"
@@ -71,7 +71,7 @@ function dipole_bc(m_accep_fam_name::String; simplified::Bool=false)
             element = rbend(String(fam_name), Float64(segmodel[i][1+1]),
                 d2r * angle, 0.0, 0.0,
                 0.0, 0.0, 0.0,
-                PolyA, PolyB)
+                copy(PolyA), copy(PolyB))
         elseif element_type == "marker"
             element = marker(fam_name)
         else
@@ -144,7 +144,7 @@ function dipole_b1(m_accep_fam_name::String; simplified::Bool=false)
 
     monomials = Int[0, 1, 2, 3, 4, 5, 6]
     segmodel = [
-        # type     len[m]   angle[deg]  PolyB(n=0)   PolyB(n=1)   PolyB(n=2)   PolyB(n=3)   PolyB(n=4)   PolyB(n=5)   PolyB(n=6)
+        #type  len[m]  angle[deg]  PolyB(n=0)  PolyB(n=1)   PolyB(n=2)   PolyB(n=3)   PolyB(n=4)   PolyB(n=5)   PolyB(n=6)
         ["B1", 0.00200, 0.00633, -1.9696e-06, -7.2541e-01, -5.4213e-01, +5.4347e+00, +2.5091e+02, +4.9772e+02, -1.9113e+06],
         ["B1", 0.00300, 0.00951, -3.8061e-06, -7.2968e-01, -4.5292e-01, +4.3822e+00, +3.1863e+02, +1.5282e+03, -2.3387e+06],
         ["B1", 0.00500, 0.01592, -4.7568e-07, -7.4227e-01, -2.1669e-01, +2.9544e+00, +2.9316e+02, +1.4632e+03, -2.0877e+06],
@@ -174,8 +174,8 @@ function dipole_b1(m_accep_fam_name::String; simplified::Bool=false)
 
     # --- creates half model ---
     d2r = pi/180.0
-    PolyB = zeros(Float64, 1+maximum(Int, monomials))
     for i in range(1, length(segmodel))
+        PolyB = zeros(Float64, 1+maximum(Int, monomials))
         fam_name, element_type = segtypes[segmodel[i][1+0]]
         angle = segmodel[i][1+2]
         if element_type == "rbend"
@@ -186,7 +186,7 @@ function dipole_b1(m_accep_fam_name::String; simplified::Bool=false)
             element = rbend(String(fam_name), Float64(segmodel[i][1+1]),
                 d2r * angle, 0.0, 0.0,
                 0.0, 0.0, 0.0,
-                PolyA, PolyB)
+                copy(PolyA), copy(PolyB))
         elseif element_type == "marker"
             element = marker(fam_name)
         else
@@ -286,8 +286,8 @@ function dipole_b2(m_accep_fam_name::String; simplified::Bool=false)
 
     # --- creates half model ---
     d2r = pi/180.0
-    PolyB = zeros(Float64, 1+maximum(Int, monomials))
     for i in range(1, length(segmodel))
+        PolyB = zeros(Float64, 1+maximum(Int, monomials))
         fam_name, element_type = segtypes[segmodel[i][1+0]]
         angle = segmodel[i][1+2]
         if element_type == "rbend"
@@ -298,7 +298,7 @@ function dipole_b2(m_accep_fam_name::String; simplified::Bool=false)
             element = rbend(String(fam_name), Float64(segmodel[i][1+1]),
                 d2r * angle, 0.0, 0.0,
                 0.0, 0.0, 0.0,
-                PolyA, PolyB)
+                copy(PolyA), copy(PolyB))
         elseif element_type == "marker"
             element = marker(fam_name)
         else
@@ -366,13 +366,13 @@ function quadrupole_q14(fam_name::String, strength::Float64; simplified::Bool=fa
     end
     PolyA = PolyB * 0.0 
     element = quadrupole(fam_name, 2*segmodel[i][1+1], PolyB[2])
-    element.properties[:polynom_a] = PolyA
-    element.properties[:polynom_b] = PolyB
+    element.properties[:polynom_a] = copy(PolyA)
+    element.properties[:polynom_b] = copy(PolyB)
     push!(model, element)
 
     if simplified
-        model[1].properties[:polynom_a] = model[1].properties[:polynom_a][1:3]
-        model[1].properties[:polynom_b] = model[1].properties[:polynom_b][1:3]
+        model[1].properties[:polynom_a] = copy(model[1].properties[:polynom_a][1:3])
+        model[1].properties[:polynom_b] = copy(model[1].properties[:polynom_b][1:3])
     end
 
     return model
@@ -414,13 +414,13 @@ function quadrupole_q20(fam_name::String, strength::Float64; simplified::Bool=fa
     end
     PolyA = PolyB * 0.0 
     element = quadrupole(fam_name, 2*segmodel[i][1+1], PolyB[2])
-    element.properties[:polynom_a] = PolyA
-    element.properties[:polynom_b] = PolyB
+    element.properties[:polynom_a] = copy(PolyA)
+    element.properties[:polynom_b] = copy(PolyB)
     push!(model, element)
 
     if simplified
-        model[1].properties[:polynom_a] = model[1].properties[:polynom_a][1:3]
-        model[1].properties[:polynom_b] = model[1].properties[:polynom_b][1:3]
+        model[1].properties[:polynom_a] = copy(model[1].properties[:polynom_a][1:3])
+        model[1].properties[:polynom_b] = copy(model[1].properties[:polynom_b][1:3])
     end
 
     return model
@@ -462,13 +462,13 @@ function quadrupole_q30(fam_name::String, strength::Float64; simplified::Bool=fa
     end
     PolyA = PolyB * 0.0 
     element = quadrupole(fam_name, 2*segmodel[i][1+1], PolyB[2])
-    element.properties[:polynom_a] = PolyA
-    element.properties[:polynom_b] = PolyB
+    element.properties[:polynom_a] = copy(PolyA)
+    element.properties[:polynom_b] = copy(PolyB)
     push!(model, element)
 
     if simplified
-        model[1].properties[:polynom_a] = model[1].properties[:polynom_a][1:3]
-        model[1].properties[:polynom_b] = model[1].properties[:polynom_b][1:3]
+        model[1].properties[:polynom_a] = copy(model[1].properties[:polynom_a][1:3])
+        model[1].properties[:polynom_b] = copy(model[1].properties[:polynom_b][1:3])
     end
 
     return model
