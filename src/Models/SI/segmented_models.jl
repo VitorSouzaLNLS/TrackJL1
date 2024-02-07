@@ -352,7 +352,7 @@ function quadrupole_q14(fam_name::String, strength::Float64; simplified::Bool=fa
     quadidx = indexin([1], monomials)[1]
     seg_lens = Float64[segmodel[i][1+1] for i in range(1, length(segmodel))]
     model_length = 2 * sum(seg_lens)
-    fmap_strength = Float64[2*segmodel[i][4+quadidx]*seg_lens[i]/model_length for i in
+    fmap_strength = Float64[2*segmodel[i][3+quadidx]*seg_lens[i]/model_length for i in
                      range(1, length(segmodel))]
     rescale = Float64[strength / fmap_strength[i] for i in range(1, length(segmodel))]
 
@@ -400,7 +400,7 @@ function quadrupole_q20(fam_name::String, strength::Float64; simplified::Bool=fa
     quadidx = indexin([1], monomials)[1]
     seg_lens = Float64[segmodel[i][1+1] for i in range(1, length(segmodel))]
     model_length = 2 * sum(seg_lens)
-    fmap_strength = Float64[2*segmodel[i][4+quadidx]*seg_lens[i]/model_length for i in
+    fmap_strength = Float64[2*segmodel[i][3+quadidx]*seg_lens[i]/model_length for i in
                      range(1, length(segmodel))]
     rescale = Float64[strength / fmap_strength[i] for i in range(1, length(segmodel))]
 
@@ -448,7 +448,7 @@ function quadrupole_q30(fam_name::String, strength::Float64; simplified::Bool=fa
     quadidx = indexin([1], monomials)[1]
     seg_lens = Float64[segmodel[i][1+1] for i in range(1, length(segmodel))]
     model_length = 2 * sum(seg_lens)
-    fmap_strength = Float64[2*segmodel[i][4+quadidx]*seg_lens[i]/model_length for i in
+    fmap_strength = Float64[2*segmodel[i][3+quadidx]*seg_lens[i]/model_length for i in
                      range(1, length(segmodel))]
     rescale = Float64[strength / fmap_strength[i] for i in range(1, length(segmodel))]
 

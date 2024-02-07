@@ -136,9 +136,7 @@ function aux_edge_fringe(pos::Pos{T}, inv_rho::Float64, edge_angle::Float64,
     psi_bar = edge_angle - inv_rho * gap * fint * (1 + sin(edge_angle)^2) / cos(edge_angle) / (1.0 + de)
     
     fy = inv_rho * tan(psi_bar) / (1.0 + de)
-
-    println(stdout, " psi_bar , fx , fy  =  $psi_bar  ,  $fx  ,  $fy")
-
+    
     pos.px += rx * fx
     pos.py -= ry * fy
 end
