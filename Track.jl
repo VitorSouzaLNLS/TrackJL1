@@ -21,13 +21,13 @@ include("src/Tracking/trackingModule.jl")
 include("src/FlatFile/flatfileModule.jl")
 include("src/Models/SI/Sirius.jl")
 
-using .Constants
-using .Auxiliary
-using .Elements
-using .PosModule#: Pos
-using .AcceleratorModule#: Accelerator, Accelerator!, print_accelerator
-using .Tracking#: track_linepass!, track_elementpass!
-using .FlatFile
-using .Sirius#: create_accelerator!
+# using .Constants
+# using .Auxiliary
+# using .Elements
+# using .PosModule#: Pos
+# using .AcceleratorModule#: Accelerator, Accelerator!, print_accelerator
+# using .Tracking#: track_linepass!, track_elementpass!
+# using .FlatFile
+# using .Sirius#: create_accelerator!
 
 end
